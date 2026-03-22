@@ -1,0 +1,56 @@
+# =============================================================================
+# ReконstructOR -- Configuracion por defecto del pipeline
+# =============================================================================
+
+[general]
+# Directorio donde se almacenan los modelos ONNX
+models_dir = "models"
+# Nivel de logging: trace, debug, info, warn, error
+log_level = "info"
+# Hilos rayon para procesamiento paralelo (0 = auto, usa todos los núcleos)
+num_threads = 0
+# Máximo de páginas en paralelo simultáneo (0 = sin límite explícito)
+max_concurrent_pages = 0
+# Intentar usar aceleración GPU (CUDA/DirectML/CoreML). Cae a CPU si no hay GPU.
+use_gpu = false
+
+[input]
+# Resolucion DPI para rasterizacion de PDF a imagen
+rasterization_dpi = 300
+# Formatos de entrada soportados
+supported_formats = ["pdf", "png", "jpg", "jpeg", "tiff", "webp"]
+
+[orientation]
+# --- Nivel 1: Orientacion de pagina completa ---
+page_threshold = 0.85
+# --- Nivel 2: Orientacion por linea de texto ---
+textline_threshold = 0.90
+textline_batch_size = 32
+
+[layout]
+# Threshold de deteccion para DocLayout-YOLO (NMS)
+detection_threshold = 0.50
+# Threshold de NMS (Non-Maximum Suppression)
+nms_threshold = 0.45
+# Tamano de imagen de entrada para el modelo
+input_size = 1024
+
+[ocr]
+# Threshold de confianza para aceptar resultado OCR
+confidence_threshold = 0.60
+# Numero maximo de reintentos en baja confianza
+max_retries = 1
+# Porcentaje max de caracteres no reconocibles antes de forzar LowConfidence
+max_unrecognizable_ratio = 0.30
+
+[table]
+# Threshold de confianza para estructura de tabla
+structure_threshold = 0.50
+
+[output]
+# Formatos de salida a generar
+formats = ["pdf", "txt", "json"]
+# Fuente por defecto para texto reconstruido en el PDF
+default_font = "Liberation Sans"
+# Tamano de fuente por defecto (puntos)
+default_font_size = 11.0

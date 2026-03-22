@@ -1,0 +1,14 @@
+[package]
+name = "reconstructor-app"
+description = "Anillo 3: Application Services — orquestacion del pipeline OCR"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+reconstructor-domain = { workspace = true }
+anyhow = { workspace = true }
+rayon = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

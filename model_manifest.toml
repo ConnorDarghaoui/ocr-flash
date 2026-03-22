@@ -1,0 +1,61 @@
+# =============================================================================
+# ReконstructOR -- Model Manifest
+# Fuente de verdad para modelos ONNX requeridos.
+# El ModelProvider verifica/descarga automaticamente al iniciar la aplicacion.
+# =============================================================================
+
+[models.orientation_page]
+name = "PULC text_image_orientation"
+repo = "monkt/paddleocr-onnx"
+path = "preprocessing/doc-orientation/PP-LCNet_x1_0_doc_ori.onnx"
+local_path = "models/orientation/page_orientation.onnx"
+sha256 = ""
+size_mb = 6
+
+[models.orientation_textline]
+name = "PP-LCNet_x1_0_textline_ori"
+repo = "monkt/paddleocr-onnx"
+path = "preprocessing/textline-orientation/PP-LCNet_x1_0_textline_ori.onnx"
+local_path = "models/orientation/textline_orientation.onnx"
+sha256 = ""
+size_mb = 6
+
+[models.ocr_det]
+name = "PP-OCRv5 Detection"
+repo = "monkt/paddleocr-onnx"
+path = "detection/v5/det.onnx"
+local_path = "models/ocr/det.onnx"
+sha256 = ""
+size_mb = 84
+
+[models.ocr_rec]
+name = "PP-OCRv5 Recognition (Latin)"
+repo = "monkt/paddleocr-onnx"
+path = "languages/latin/rec.onnx"
+local_path = "models/ocr/rec.onnx"
+sha256 = ""
+size_mb = 8
+
+[models.ocr_dict]
+name = "PP-OCRv5 Dictionary (Latin)"
+repo = "monkt/paddleocr-onnx"
+path = "languages/latin/dict.txt"
+local_path = "models/ocr/dict.txt"
+sha256 = ""
+size_mb = 0
+
+[models.layout]
+name = "DocLayout-YOLO DocStructBench"
+repo = "wybxc/DocLayout-YOLO-DocStructBench-onnx"
+path = "doclayout_yolo_docstructbench_imgsz1024.onnx"
+local_path = "models/layout/doclayout_yolo.onnx"
+sha256 = ""
+size_mb = 75
+
+[models.table]
+name = "SLANet+ (PPStructure English)"
+repo = "Desperado-JT/PPStructure-Mobile-V2-SLANet"
+path = "en_ppstructure_mobile_v2_SLANet.onnx"
+local_path = "models/table/slanet_plus.onnx"
+sha256 = ""
+size_mb = 10

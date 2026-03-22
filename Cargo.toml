@@ -1,0 +1,66 @@
+[workspace]
+resolver = "2"
+members = [
+    "src/reconstructor-domain",
+    "src/reconstructor-app",
+    "src/reconstructor-infra",
+    "src/reconstructor-ui",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75.0"
+license = "GPL-3.0"
+
+[workspace.dependencies]
+# --- Domain ---
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+# --- Application ---
+anyhow = "1"
+rayon = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# --- Config ---
+toml = "0.8"
+
+# --- Imagen ---
+image = "0.25"
+imageproc = "0.25"
+
+# --- Tensores ---
+ndarray = "0.17"
+
+# --- ONNX Runtime ---
+ort = { version = "2.0.0-rc.12", features = ["download-binaries"] }
+
+# --- PDF ---
+printpdf = { version = "0.7", features = ["embedded_images"] }
+pdfium-render = "0.8"
+
+# --- Descarga de modelos ---
+reqwest = { version = "0.12", features = ["blocking", "rustls-tls"], default-features = false }
+sha2 = "0.10"
+
+# --- CLI ---
+clap = { version = "4", features = ["derive"] }
+
+# --- Evaluación / Benchmarks ---
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# --- GUI ---
+slint = "1"
+slint-build = "1"
+rfd = "0.14"
+dirs = "5"
+open = "5"
+
+# --- Internal crates ---
+reconstructor-domain = { path = "src/reconstructor-domain" }
+reconstructor-app = { path = "src/reconstructor-app" }
+reconstructor-infra = { path = "src/reconstructor-infra" }
+reconstructor-ui = { path = "src/reconstructor-ui" }

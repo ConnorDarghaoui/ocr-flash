@@ -1,0 +1,674 @@
+// =============================================================================
+// AppWindow — Interfaz Principal de ReконstructOR
+//
+// Propósito: Define la topología visual y el enrutamiento de estados de la UI.
+//            Actúa como el sumidero de eventos del `PipelineOrchestrator`, 
+//            proyectando el estado interno del pipeline hacia el usuario.
+//
+// Flujo:     |> 0: CheckingModels (Bootstrap de dependencias)
+//            |> 1: ModelDownload (Hidratación de pesos ONNX)
+//            |> 2: FileSelect (Ingesta de documentos)
+//            |> 3: Processing (Visualización del pipeline paralelo)
+//            |> 4: Results (Exposición de métricas y artefactos)
+//            |> 5: Settings (Ajuste de heurísticas y hardware)
+// =============================================================================
+
+import { Button, VerticalBox, HorizontalBox, ProgressIndicator, ListView, LineEdit, CheckBox, Slider, SpinBox, Palette } from "std-widgets.slint";
+
+export struct ModelRowData {
+    id: string,
+    name: string,
+    size-mb: int,
+    progress: float,
+    status: string,
+}
+
+export struct PageThumbnail {
+    page-number: int,
+    image: image,
+    completed: bool,
+}
+
+export struct MetricsData {
+    total-pages: int,
+    total-blocks: int,
+    text-blocks: int,
+    table-blocks: int,
+    raster-blocks: int,
+    unresolvable: int,
+    total-time-ms: float,
+    avg-time-per-page-ms: float,
+}
+
+export struct SettingsData {
+    confidence-threshold: float,
+    dpi: int,
+    ocr-language: string,
+    output-dir: string,
+    dark-mode: bool,
+}
+
+export struct PageStateData {
+    page-number: int,
+    state: string,
+}
+
+export struct BlockStateData {
+    id: string,
+    block-type: string,
+    text-preview: string,
+    state: string,
+}
+
+export component AppWindow inherits Window {
+    title: "ReконstructOR";
+    min-width: 900px;
+    min-height: 600px;
+    preferred-width: 1024px;
+    preferred-height: 720px;
+    background: dark-mode ? #1e1e24 : #f5f7fa;
+    default-font-family: "Inter, Roboto, sans-serif";
+
+    in-out property <bool> dark-mode: false;
+
+    // ── Enrutamiento de Vistas ──────────────────────────────────────────
+    in-out property <int> current-page: 0;
+
+    // ── Estado de Infraestructura (Modelos) ─────────────────────────────
+    in-out property <[ModelRowData]> models: [];
+    in-out property <float> download-total-progress: 0.0;
+    in-out property <bool> download-in-progress: false;
+    in-out property <bool> download-failed: false;
+    in-out property <string> download-error: "";
+
+    // ── Estado de Ingesta (I/O) ─────────────────────────────────────────
+    in-out property <string> selected-file: "";
+    in-out property <bool> file-valid: false;
+    in-out property <string> output-dir: "";
+
+    // ── Estado del Orquestador (Pipeline) ───────────────────────────────
+    in-out property <float> processing-progress: 0.0;
+    in-out property <string> current-page-label: "";
+    in-out property <string> document-state: "";
+    in-out property <[PageThumbnail]> thumbnails: [];
+    in-out property <[PageStateData]> page-states: [];
+    in-out property <[BlockStateData]> block-states: [];
+
+    // ── Estado de Salida (Artefactos) ───────────────────────────────────
+    in-out property <MetricsData> metrics;
+    in-out property <string> output-path: "";
+    in-out property <string> error-message: "";
+
+    // ── Configuración de Heurísticas ────────────────────────────────────
+    in-out property <SettingsData> current-settings: {
+        confidence-threshold: 0.6,
+        dpi: 300,
+        ocr-language: "es",
+        output-dir: "output",
+        dark-mode: false,
+    };
+
+    callback start-download();
+    callback retry-download();
+    callback select-file();
+    callback drop-file(string);
+    callback start-processing();
+    callback open-output-folder();
+    callback save-settings(SettingsData);
+    callback navigate-to(int);
+    callback open-thumbnail(int);
+
+    property <color> bg-card: dark-mode ? #2b2b36 : #ffffff;
+    property <color> text-primary: dark-mode ? #f0f0f5 : #1a1a24;
+    property <color> text-secondary: dark-mode ? #a0a0ab : #6b7280;
+    property <color> accent-color: #3b82f6;
+    property <color> success-color: #10b981;
+    property <color> warning-color: #f59e0b;
+    property <color> error-color: #ef4444;
+    property <color> border-color: dark-mode ? #3f3f3f : #e2e8f0;
+
+    VerticalBox {
+        padding: 0;
+        spacing: 0;
+        
+        Rectangle {
+            height: 60px;
+            background: bg-card;
+            border-width: 1px;
+            border-color: border-color;
+            
+            HorizontalBox {
+                padding-left: 24px;
+                padding-right: 24px;
+                alignment: space-between;
+                
+                HorizontalBox {
+                    alignment: start;
+                    spacing: 12px;
+                    Text {
+                        text: "👁️";
+                        font-size: 24px;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: "ReконstructOR";
+                        font-size: 20px;
+                        font-weight: 800;
+                        color: text-primary;
+                        vertical-alignment: center;
+                        letter-spacing: 1px;
+                    }
+                }
+                
+                if current-page == 2 || current-page == 4: Button {
+                    text: "⚙ Configuración";
+                    clicked => { navigate-to(5); }
+                }
+            }
+        }
+
+        VerticalBox {
+            vertical-stretch: 1;
+            padding: 32px;
+
+            Rectangle {
+                background: bg-card;
+                border-radius: 12px;
+                border-width: 1px;
+                border-color: border-color;
+                drop-shadow-blur: 16px;
+                drop-shadow-color: dark-mode ? #00000040 : #00000010;
+                drop-shadow-offset-y: 4px;
+
+                if current-page == 0: VerticalBox {
+                    alignment: center;
+                    spacing: 16px;
+                    Text {
+                        text: "Inicializando motor de inferencia...";
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: text-primary;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: "Verificando modelos ONNX locales...";
+                        font-size: 14px;
+                        color: text-secondary;
+                        horizontal-alignment: center;
+                    }
+                    HorizontalBox {
+                        alignment: center;
+                        ProgressIndicator {
+                            indeterminate: true;
+                            width: 200px;
+                        }
+                    }
+                }
+
+                if current-page == 1: VerticalBox {
+                    padding: 32px;
+                    spacing: 16px;
+                    Text {
+                        text: "Descarga de Modelos Requerida";
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: text-primary;
+                    }
+                    Text {
+                        text: "El sistema OCR necesita descargar los modelos de Inteligencia Artificial la primera vez. Esto asegura la máxima precisión y velocidad local.";
+                        color: text-secondary;
+                        wrap: word-wrap;
+                        font-size: 15px;
+                    }
+
+                    Rectangle { height: 8px; }
+
+                    Rectangle {
+                        border-radius: 8px;
+                        border-width: 1px;
+                        border-color: border-color;
+                        background: dark-mode ? #1e1e24 : #f8fafc;
+                        
+                        ListView {
+                            padding: 8px;
+                            for m in models: HorizontalBox {
+                                spacing: 16px;
+                                padding: 12px;
+                                Rectangle {
+                                    width: 8px;
+                                    border-radius: 4px;
+                                    background: m.status == "ok" ? success-color : m.status == "corrupted" ? error-color : accent-color;
+                                }
+                                VerticalBox {
+                                    horizontal-stretch: 1;
+                                    spacing: 6px;
+                                    HorizontalBox {
+                                        Text { text: m.name; font-weight: 600; color: text-primary; font-size: 15px; }
+                                        Text {
+                                            text: m.size-mb + " MB";
+                                            color: text-secondary;
+                                            horizontal-stretch: 1;
+                                            horizontal-alignment: right;
+                                            font-size: 13px;
+                                        }
+                                    }
+                                    ProgressIndicator {
+                                        progress: m.progress;
+                                        height: 6px;
+                                    }
+                                }
+                                Text {
+                                    text: m.status == "ok" ? "✓" : m.status == "downloading" ? "..." : "";
+                                    color: m.status == "ok" ? success-color : text-secondary;
+                                    font-weight: 800;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    VerticalBox {
+                        spacing: 8px;
+                        Text {
+                            text: "Progreso Total (" + Math.round(download-total-progress * 100) + "%)";
+                            font-size: 13px;
+                            color: text-secondary;
+                        }
+                        ProgressIndicator { progress: download-total-progress; height: 10px; }
+                    }
+
+                    if download-error != "": Rectangle {
+                        background: error-color.transparentize(0.8);
+                        border-radius: 6px;
+                        padding: 12px;
+                        Text {
+                            text: "Error: " + download-error;
+                            color: error-color;
+                            wrap: word-wrap;
+                        }
+                    }
+
+                    HorizontalBox {
+                        alignment: end;
+                        spacing: 12px;
+                        if download-failed: Button {
+                            text: "Reintentar Descarga";
+                            clicked => { retry-download(); }
+                        }
+                        if !download-in-progress: Button {
+                            text: "Iniciar Descarga";
+                            primary: true;
+                            clicked => { start-download(); }
+                        }
+                    }
+                }
+
+                if current-page == 2: VerticalBox {
+                    padding: 40px;
+                    alignment: center;
+                    spacing: 24px;
+
+                    Text {
+                        text: "Reconstrucción Documental OCR";
+                        font-size: 28px;
+                        font-weight: 800;
+                        color: text-primary;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: "Convierte imágenes y PDFs escaneados en documentos estructurados, con texto seleccionable, tablas vivas y preservando el diseño original.";
+                        color: text-secondary;
+                        font-size: 15px;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+
+                    Rectangle {
+                        height: 240px;
+                        border-radius: 16px;
+                        border-width: 2px;
+                        border-color: file-valid ? success-color : border-color;
+                        background: file-valid ? success-color.transparentize(0.9) : (dark-mode ? #22222b : #f8fafc);
+
+                        VerticalBox {
+                            alignment: center;
+                            spacing: 16px;
+                            Text {
+                                text: file-valid ? "📄" : "📥";
+                                font-size: 48px;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: file-valid ? selected-file : "Arrastra un archivo PDF o Imagen aquí";
+                                font-size: 16px;
+                                font-weight: file-valid ? 600 : 400;
+                                color: file-valid ? text-primary : text-secondary;
+                                horizontal-alignment: center;
+                                wrap: word-wrap;
+                            }
+                            if !file-valid: Text {
+                                text: "Soporta .pdf, .png, .jpg, .tiff, .webp";
+                                font-size: 12px;
+                                color: text-secondary;
+                                horizontal-alignment: center;
+                            }
+                            HorizontalBox {
+                                alignment: center;
+                                Button {
+                                    text: file-valid ? "Cambiar Archivo..." : "Examinar Archivos...";
+                                    clicked => { select-file(); }
+                                }
+                            }
+                        }
+                    }
+
+                    if error-message != "": Text {
+                        text: error-message;
+                        color: error-color;
+                        horizontal-alignment: center;
+                    }
+
+                    HorizontalBox {
+                        alignment: center;
+                        Button {
+                            text: "  Procesar Documento  ";
+                            primary: true;
+                            enabled: file-valid;
+                            clicked => { start-processing(); }
+                        }
+                    }
+                }
+
+                if current-page == 3: VerticalBox {
+                    padding: 32px;
+                    spacing: 20px;
+                    
+                    Text {
+                        text: "Procesando Documento";
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: text-primary;
+                    }
+
+                    VerticalBox {
+                        spacing: 8px;
+                        HorizontalBox {
+                            Text { text: document-state; font-weight: 600; color: text-primary; }
+                            Text { 
+                                text: Math.round(processing-progress * 100) + "%"; 
+                                horizontal-alignment: right; 
+                                color: text-secondary;
+                            }
+                        }
+                        ProgressIndicator { progress: processing-progress; height: 12px; }
+                        Text {
+                            text: current-page-label;
+                            font-size: 13px;
+                            color: text-secondary;
+                        }
+                    }
+
+                    HorizontalBox {
+                        spacing: 24px;
+                        vertical-stretch: 1;
+
+                        VerticalBox {
+                            width: 30%;
+                            spacing: 8px;
+                            Text { text: "Páginas"; font-weight: 600; color: text-primary; }
+                            Rectangle {
+                                border-width: 1px;
+                                border-color: border-color;
+                                border-radius: 6px;
+                                ListView {
+                                    padding: 8px;
+                                    for p in page-states: HorizontalBox {
+                                        padding: 6px;
+                                        Text { text: "Pág " + p.page-number; color: text-primary; font-weight: 500; }
+                                        Text { text: p.state; horizontal-alignment: right; color: p.state == "Done" ? success-color : text-secondary; font-size: 12px; font-weight: 600;}
+                                    }
+                                }
+                                if page-states.length == 0: VerticalBox {
+                                    padding: 12px;
+                                    Text { text: "Analizando layout..."; color: text-secondary; font-size: 13px;}
+                                }
+                            }
+                        }
+
+                        VerticalBox {
+                            width: 70%;
+                            spacing: 8px;
+                            Text { text: "Detalle de Bloques (Página Actual)"; font-weight: 600; color: text-primary; }
+                            Rectangle {
+                                border-width: 1px;
+                                border-color: border-color;
+                                border-radius: 6px;
+                                ListView {
+                                    padding: 8px;
+                                    for b in block-states: HorizontalBox {
+                                        padding: 6px;
+                                        spacing: 12px;
+                                        Text { text: b.id; width: 60px; color: text-secondary; font-size: 12px; }
+                                        Text { 
+                                            text: b.block-type; 
+                                            width: 70px; 
+                                            font-weight: 600;
+                                            color: b.block-type == "Table" ? accent-color : (b.block-type == "Figure" ? warning-color : text-primary);
+                                            font-size: 12px; 
+                                        }
+                                        Text { text: b.text-preview; horizontal-stretch: 1; color: text-secondary; overflow: elide; font-size: 13px;}
+                                        Text { 
+                                            text: b.state; 
+                                            width: 100px; 
+                                            horizontal-alignment: right; 
+                                            color: b.state == "Composed" || b.state == "Resolved" ? success-color : (b.state == "Fallback" ? warning-color : text-secondary);
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                        }
+                                    }
+                                }
+                                if block-states.length == 0: VerticalBox {
+                                    padding: 12px;
+                                    Text { text: "Esperando regiones detectadas..."; color: text-secondary; font-size: 13px;}
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if current-page == 4: VerticalBox {
+                    padding: 32px;
+                    spacing: 24px;
+                    
+                    HorizontalBox {
+                        Text {
+                            text: "¡Reconstrucción Completada!";
+                            font-size: 28px;
+                            font-weight: 800;
+                            color: success-color;
+                            horizontal-stretch: 1;
+                        }
+                    }
+
+                    HorizontalBox {
+                        spacing: 24px;
+                        
+                        Rectangle {
+                            width: 60%;
+                            background: dark-mode ? #1e1e24 : #f8fafc;
+                            border-radius: 8px;
+                            border-width: 1px;
+                            border-color: border-color;
+                            padding: 24px;
+
+                            VerticalBox {
+                                spacing: 16px;
+                                Text { text: "Archivos Generados"; font-weight: 700; font-size: 18px; color: text-primary; }
+                                
+                                HorizontalBox {
+                                    spacing: 12px;
+                                    Text { text: "📄"; font-size: 24px; vertical-alignment: center; }
+                                    VerticalBox {
+                                        Text { text: "Documento PDF"; font-weight: 600; color: text-primary; }
+                                        Text { text: output-path + ".pdf"; color: text-secondary; font-size: 12px; }
+                                    }
+                                }
+                                HorizontalBox {
+                                    spacing: 12px;
+                                    Text { text: "📝"; font-size: 24px; vertical-alignment: center; }
+                                    VerticalBox {
+                                        Text { text: "Texto Extraído"; font-weight: 600; color: text-primary; }
+                                        Text { text: output-path + ".txt"; color: text-secondary; font-size: 12px; }
+                                    }
+                                }
+                                HorizontalBox {
+                                    spacing: 12px;
+                                    Text { text: "📊"; font-size: 24px; vertical-alignment: center; }
+                                    VerticalBox {
+                                        Text { text: "Estructura JSON"; font-weight: 600; color: text-primary; }
+                                        Text { text: output-path + ".json"; color: text-secondary; font-size: 12px; }
+                                    }
+                                }
+
+                                Rectangle { vertical-stretch: 1; }
+
+                                HorizontalBox {
+                                    spacing: 12px;
+                                    Button { text: "Procesar otro archivo"; clicked => { navigate-to(2); } }
+                                    Button { text: "Abrir carpeta"; primary: true; clicked => { open-output-folder(); } }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: 40%;
+                            background: dark-mode ? #22222b : #ffffff;
+                            border-radius: 8px;
+                            border-width: 1px;
+                            border-color: border-color;
+                            padding: 24px;
+
+                            VerticalBox {
+                                spacing: 12px;
+                                Text { text: "Métricas de Calidad"; font-weight: 700; font-size: 18px; color: text-primary; }
+                                
+                                HorizontalBox { Text { text: "Páginas procesadas:"; color: text-secondary; } Text { text: metrics.total-pages; font-weight: 600; horizontal-alignment: right; color: text-primary;} }
+                                HorizontalBox { Text { text: "Bloques detectados:"; color: text-secondary; } Text { text: metrics.total-blocks; font-weight: 600; horizontal-alignment: right; color: text-primary;} }
+                                Rectangle { height: 1px; background: border-color; }
+                                HorizontalBox { Text { text: "Bloques de texto:"; color: text-secondary; } Text { text: metrics.text-blocks; font-weight: 600; horizontal-alignment: right; color: text-primary;} }
+                                HorizontalBox { Text { text: "Tablas detectadas:"; color: text-secondary; } Text { text: metrics.table-blocks; font-weight: 600; horizontal-alignment: right; color: text-primary;} }
+                                HorizontalBox { Text { text: "Regiones en fallback:"; color: text-secondary; } Text { text: metrics.raster-blocks; font-weight: 600; horizontal-alignment: right; color: warning-color;} }
+                                Rectangle { height: 1px; background: border-color; }
+                                HorizontalBox { Text { text: "Tiempo total:"; color: text-secondary; } Text { text: (Math.round(metrics.total-time-ms / 100) / 10) + " s"; font-weight: 600; horizontal-alignment: right; color: text-primary;} }
+                                HorizontalBox { Text { text: "Rendimiento:"; color: text-secondary; } Text { text: Math.round(metrics.avg-time-per-page-ms) + " ms/pág"; font-weight: 600; horizontal-alignment: right; color: text-primary;} }
+                            }
+                        }
+                    }
+                }
+
+                if current-page == 5: VerticalBox {
+                    padding: 32px;
+                    spacing: 24px;
+                    
+                    Text {
+                        text: "Configuración del Sistema";
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: text-primary;
+                    }
+
+                    property <float> edit-threshold: current-settings.confidence-threshold;
+                    property <int> edit-dpi: current-settings.dpi;
+                    property <string> edit-output-dir: current-settings.output-dir;
+                    property <bool> edit-dark-mode: current-settings.dark-mode;
+
+                    VerticalBox {
+                        spacing: 24px;
+                        
+                        VerticalBox {
+                            spacing: 8px;
+                            Text { text: "Umbral de Confianza OCR (Fallback Threshold)"; font-weight: 600; color: text-primary; }
+                            Text { text: "Si el modelo no supera este nivel (0.1 a 0.99), se usará la imagen original (fallback)."; font-size: 13px; color: text-secondary; }
+                            HorizontalBox {
+                                spacing: 16px;
+                                Slider {
+                                    minimum: 0.1;
+                                    maximum: 0.99;
+                                    value: edit-threshold;
+                                    horizontal-stretch: 1;
+                                    changed(v) => { edit-threshold = v; }
+                                }
+                                Text {
+                                    text: Math.round(edit-threshold * 100) + "%";
+                                    width: 48px;
+                                    font-weight: 600;
+                                    color: accent-color;
+                                    horizontal-alignment: right;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        VerticalBox {
+                            spacing: 8px;
+                            Text { text: "Resolución de Rasterización PDF"; font-weight: 600; color: text-primary; }
+                            Text { text: "Mayor DPI mejora la lectura pero consume más RAM (recomendado: 300)."; font-size: 13px; color: text-secondary; }
+                            SpinBox {
+                                minimum: 150;
+                                maximum: 600;
+                                value: edit-dpi;
+                                width: 120px;
+                                edited(v) => { edit-dpi = v; }
+                            }
+                        }
+
+                        VerticalBox {
+                            spacing: 8px;
+                            Text { text: "Carpeta de Salida por Defecto"; font-weight: 600; color: text-primary; }
+                            LineEdit {
+                                text: edit-output-dir;
+                                placeholder-text: "./output";
+                                edited(v) => { edit-output-dir = v; }
+                            }
+                        }
+
+                        VerticalBox {
+                            spacing: 8px;
+                            Text { text: "Apariencia"; font-weight: 600; color: text-primary; }
+                            CheckBox {
+                                text: "Activar Modo Oscuro";
+                                checked: edit-dark-mode;
+                                toggled => { edit-dark-mode = self.checked; }
+                            }
+                        }
+                    }
+
+                    Rectangle { vertical-stretch: 1; }
+
+                    HorizontalBox {
+                        alignment: end;
+                        spacing: 16px;
+                        Button {
+                            text: "Cancelar";
+                            clicked => { navigate-to(2); }
+                        }
+                        Button {
+                            text: "Guardar Cambios";
+                            primary: true;
+                            clicked => {
+                                save-settings({
+                                    confidence-threshold: edit-threshold,
+                                    dpi: edit-dpi,
+                                    ocr-language: current-settings.ocr-language,
+                                    output-dir: edit-output-dir,
+                                    dark-mode: edit-dark-mode,
+                                });
+                                navigate-to(2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

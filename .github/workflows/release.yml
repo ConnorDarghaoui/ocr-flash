@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    name: Build Linux x86_64
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libfontconfig1-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libxkbcommon-dev \
+            libssl-dev \
+            pkg-config
+
+      - name: Build release binaries
+        run: cargo build --release --bin reconstructor --bin reconstructor-gui
+
+      - name: Package tar.gz
+        run: |
+          VERSION="${{ github.ref_name }}"
+          DIST="reconstructor-${VERSION}-linux-x86_64"
+          mkdir -p "$DIST"
+          cp target/release/reconstructor "$DIST/"
+          cp target/release/reconstructor-gui "$DIST/"
+          cp model_manifest.toml "$DIST/"
+          cp -r config "$DIST/"
+          tar czf "${DIST}.tar.gz" "$DIST/"
+          sha256sum "${DIST}.tar.gz" > SHA256SUMS.txt
+          echo "DIST_NAME=${DIST}" >> "$GITHUB_ENV"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64
+          path: |
+            ${{ env.DIST_NAME }}.tar.gz
+            SHA256SUMS.txt
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-22.04
+    needs: [build-linux]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          generate_release_notes: true
+          files: |
+            *.tar.gz
+            SHA256SUMS.txt

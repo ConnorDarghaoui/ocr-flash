@@ -1,0 +1,43 @@
+# --- Rust ---
+/target/
+**/*.rs.bk
+
+# --- Modelos ONNX (auto-descargados por ModelProvider) ---
+# No subir los pesos de los modelos (ADR-010)
+models/**/*.onnx
+models/**/*.txt
+models/**/*.bin
+!models/.gitkeep
+
+# --- IDE & Editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.helix/
+
+# --- OS ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- Logs & Debug ---
+*.log
+firebase-debug.log
+crash.log
+
+# --- AI Assistants & Metadata ---
+.claude/
+.gemini/
+.gemini_security/
+.chat/
+
+# --- Environment & Secrets ---
+.env
+.env.*
+!.env.example

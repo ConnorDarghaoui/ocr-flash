@@ -1,0 +1,311 @@
+{
+  "metricas": {
+    "bloques_fallback_raster": 6,
+    "bloques_irresolubles": 0,
+    "bloques_resueltos_tabla": 0,
+    "bloques_resueltos_texto": 0,
+    "tiempo_promedio_por_pagina_ms": "<normalizado>",
+    "tiempo_total_ms": "<normalizado>",
+    "total_bloques_detectados": 6,
+    "total_paginas": 3
+  },
+  "paginas": [
+    {
+      "alto": 842,
+      "ancho": 595,
+      "bloques_resueltos": [
+        {
+          "confianza_resolucion": 1.0,
+          "contenido": {
+            "alto": 842,
+            "ancho": 595,
+            "content_type": "raster"
+          },
+          "estado_actual": "Composed",
+          "estrategia_utilizada": "PaddleOcr",
+          "historial_estados": [
+            {
+              "event": "EstrategiaSeleccionada(PaddleOcr)",
+              "from": "Detected",
+              "ms": 0.0,
+              "to": "Resolving"
+            },
+            {
+              "event": "InferenciaOk(conf=1.00)",
+              "from": "Resolving",
+              "ms": 0.0,
+              "to": "Resolved"
+            },
+            {
+              "event": "Compuesto",
+              "from": "Resolved",
+              "ms": 0.0,
+              "to": "Composed"
+            }
+          ],
+          "region_id": "blk_1_0",
+          "tipo_bloque": "text"
+        },
+        {
+          "confianza_resolucion": 1.0,
+          "contenido": {
+            "alto": 842,
+            "ancho": 595,
+            "content_type": "raster"
+          },
+          "estado_actual": "Composed",
+          "estrategia_utilizada": "PaddleOcr",
+          "historial_estados": [
+            {
+              "event": "EstrategiaSeleccionada(PaddleOcr)",
+              "from": "Detected",
+              "ms": 0.0,
+              "to": "Resolving"
+            },
+            {
+              "event": "InferenciaOk(conf=1.00)",
+              "from": "Resolving",
+              "ms": 0.0,
+              "to": "Resolved"
+            },
+            {
+              "event": "Compuesto",
+              "from": "Resolved",
+              "ms": 0.0,
+              "to": "Composed"
+            }
+          ],
+          "region_id": "blk_1_1",
+          "tipo_bloque": "text"
+        }
+      ],
+      "numero_pagina": 1,
+      "orientacion_correccion_grados": 0.0,
+      "orientacion_incierta": false,
+      "regiones": [
+        {
+          "bbox": {
+            "height": 421.0,
+            "width": 595.0,
+            "x": 0.0,
+            "y": 0.0
+          },
+          "confianza_deteccion": 0.95,
+          "id": "blk_1_0",
+          "tipo_bloque": "text"
+        },
+        {
+          "bbox": {
+            "height": 421.0,
+            "width": 595.0,
+            "x": 0.0,
+            "y": 421.0
+          },
+          "confianza_deteccion": 0.95,
+          "id": "blk_1_1",
+          "tipo_bloque": "text"
+        }
+      ],
+      "tiempo_procesamiento_ms": "<normalizado>"
+    },
+    {
+      "alto": 842,
+      "ancho": 595,
+      "bloques_resueltos": [
+        {
+          "confianza_resolucion": 1.0,
+          "contenido": {
+            "alto": 842,
+            "ancho": 595,
+            "content_type": "raster"
+          },
+          "estado_actual": "Composed",
+          "estrategia_utilizada": "PaddleOcr",
+          "historial_estados": [
+            {
+              "event": "EstrategiaSeleccionada(PaddleOcr)",
+              "from": "Detected",
+              "ms": 0.0,
+              "to": "Resolving"
+            },
+            {
+              "event": "InferenciaOk(conf=1.00)",
+              "from": "Resolving",
+              "ms": 0.0,
+              "to": "Resolved"
+            },
+            {
+              "event": "Compuesto",
+              "from": "Resolved",
+              "ms": 0.0,
+              "to": "Composed"
+            }
+          ],
+          "region_id": "blk_2_0",
+          "tipo_bloque": "text"
+        },
+        {
+          "confianza_resolucion": 1.0,
+          "contenido": {
+            "alto": 842,
+            "ancho": 595,
+            "content_type": "raster"
+          },
+          "estado_actual": "Composed",
+          "estrategia_utilizada": "PaddleOcr",
+          "historial_estados": [
+            {
+              "event": "EstrategiaSeleccionada(PaddleOcr)",
+              "from": "Detected",
+              "ms": 0.0,
+              "to": "Resolving"
+            },
+            {
+              "event": "InferenciaOk(conf=1.00)",
+              "from": "Resolving",
+              "ms": 0.0,
+              "to": "Resolved"
+            },
+            {
+              "event": "Compuesto",
+              "from": "Resolved",
+              "ms": 0.0,
+              "to": "Composed"
+            }
+          ],
+          "region_id": "blk_2_1",
+          "tipo_bloque": "text"
+        }
+      ],
+      "numero_pagina": 2,
+      "orientacion_correccion_grados": 0.0,
+      "orientacion_incierta": false,
+      "regiones": [
+        {
+          "bbox": {
+            "height": 421.0,
+            "width": 595.0,
+            "x": 0.0,
+            "y": 0.0
+          },
+          "confianza_deteccion": 0.95,
+          "id": "blk_2_0",
+          "tipo_bloque": "text"
+        },
+        {
+          "bbox": {
+            "height": 421.0,
+            "width": 595.0,
+            "x": 0.0,
+            "y": 421.0
+          },
+          "confianza_deteccion": 0.95,
+          "id": "blk_2_1",
+          "tipo_bloque": "text"
+        }
+      ],
+      "tiempo_procesamiento_ms": "<normalizado>"
+    },
+    {
+      "alto": 842,
+      "ancho": 595,
+      "bloques_resueltos": [
+        {
+          "confianza_resolucion": 1.0,
+          "contenido": {
+            "alto": 842,
+            "ancho": 595,
+            "content_type": "raster"
+          },
+          "estado_actual": "Composed",
+          "estrategia_utilizada": "PaddleOcr",
+          "historial_estados": [
+            {
+              "event": "EstrategiaSeleccionada(PaddleOcr)",
+              "from": "Detected",
+              "ms": 0.0,
+              "to": "Resolving"
+            },
+            {
+              "event": "InferenciaOk(conf=1.00)",
+              "from": "Resolving",
+              "ms": 0.0,
+              "to": "Resolved"
+            },
+            {
+              "event": "Compuesto",
+              "from": "Resolved",
+              "ms": 0.0,
+              "to": "Composed"
+            }
+          ],
+          "region_id": "blk_3_0",
+          "tipo_bloque": "text"
+        },
+        {
+          "confianza_resolucion": 1.0,
+          "contenido": {
+            "alto": 842,
+            "ancho": 595,
+            "content_type": "raster"
+          },
+          "estado_actual": "Composed",
+          "estrategia_utilizada": "PaddleOcr",
+          "historial_estados": [
+            {
+              "event": "EstrategiaSeleccionada(PaddleOcr)",
+              "from": "Detected",
+              "ms": 0.0,
+              "to": "Resolving"
+            },
+            {
+              "event": "InferenciaOk(conf=1.00)",
+              "from": "Resolving",
+              "ms": 0.0,
+              "to": "Resolved"
+            },
+            {
+              "event": "Compuesto",
+              "from": "Resolved",
+              "ms": 0.0,
+              "to": "Composed"
+            }
+          ],
+          "region_id": "blk_3_1",
+          "tipo_bloque": "text"
+        }
+      ],
+      "numero_pagina": 3,
+      "orientacion_correccion_grados": 0.0,
+      "orientacion_incierta": false,
+      "regiones": [
+        {
+          "bbox": {
+            "height": 421.0,
+            "width": 595.0,
+            "x": 0.0,
+            "y": 0.0
+          },
+          "confianza_deteccion": 0.95,
+          "id": "blk_3_0",
+          "tipo_bloque": "text"
+        },
+        {
+          "bbox": {
+            "height": 421.0,
+            "width": 595.0,
+            "x": 0.0,
+            "y": 421.0
+          },
+          "confianza_deteccion": 0.95,
+          "id": "blk_3_1",
+          "tipo_bloque": "text"
+        }
+      ],
+      "tiempo_procesamiento_ms": "<normalizado>"
+    }
+  ],
+  "procesado_en": "<normalizado>",
+  "ruta_origen": "/tmp/reconstructor_snapshot_tests/3_paginas_2_regiones/output",
+  "version_pipeline": "0.1.0"
+}
