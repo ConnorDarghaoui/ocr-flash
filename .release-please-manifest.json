@@ -1,3 +1,6 @@
 {
-  ".": "0.1.0"
+  "src/reconstructor-domain": "0.1.0",
+  "src/reconstructor-app": "0.1.0",
+  "src/reconstructor-infra": "0.1.0",
+  "src/reconstructor-ui": "0.1.0"
 }
