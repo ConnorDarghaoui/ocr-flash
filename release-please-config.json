@@ -1,11 +1,24 @@
 {
   "packages": {
-    ".": {
+    "src/reconstructor-domain": {
       "release-type": "rust",
-      "package-name": "ocr-flash",
-      "changelog-path": "CHANGELOG.md",
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
+      "package-name": "reconstructor-domain",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "src/reconstructor-app": {
+      "release-type": "rust",
+      "package-name": "reconstructor-app",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "src/reconstructor-infra": {
+      "release-type": "rust",
+      "package-name": "reconstructor-infra",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "src/reconstructor-ui": {
+      "release-type": "rust",
+      "package-name": "reconstructor-ui",
+      "changelog-path": "CHANGELOG.md"
     }
   },
   "plugins": [
