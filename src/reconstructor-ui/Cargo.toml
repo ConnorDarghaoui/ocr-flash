@@ -1,10 +1,26 @@
 [package]
 name = "reconstructor-ui"
-description = "Anillo 4 + Composition Root: Slint UI y ensamblaje del sistema"
+description = "Motor de reconstrucción documental de alto rendimiento"
 version.workspace = true
+authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+
+[package.metadata.deb]
+name = "ocr-flash"
+maintainer = "boniche"
+copyright = "2026, boniche"
+license-file = ["../../README.md", "0"]
+depends = "$auto, libfontconfig1, libxkbcommon0"
+section = "utils"
+priority = "optional"
+assets = [
+    ["target/release/reconstructor-gui", "usr/bin/ocr-flash-gui", "755"],
+    ["target/release/reconstructor", "usr/bin/ocr-flash", "755"],
+    ["../../model_manifest.toml", "etc/ocr-flash/model_manifest.toml", "644"],
+    ["../../config/default.toml", "etc/ocr-flash/default.toml", "644"],
+]
 
 [[bin]]
 name = "reconstructor"

@@ -1,88 +1,132 @@
-name: Release
+name: Release Please
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-linux:
-    name: Build Linux x86_64
-    runs-on: ubuntu-22.04
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          release-type: rust
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build-release:
+    name: Build (${{ matrix.target }})
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64 (Debian)
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            artifact_name: reconstructor-debian-amd64
+            bundle: debian
+          
+          - name: Linux x86_64 (Arch)
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            artifact_name: reconstructor-arch-x64
+            bundle: arch
+
+          - name: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: reconstructor-windows-x64
+            bundle: zip
+
+          - name: macOS Silicon (arm64)
+            os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: reconstructor-macos-arm64
+            bundle: tar
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust stable
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          targets: ${{ matrix.target }}
 
-      - name: Install system dependencies
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-${{ matrix.target }}
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libfontconfig1-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev \
-            libxkbcommon-dev \
-            libssl-dev \
-            pkg-config
+          sudo apt-get install -y libfontconfig1-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev pkg-config
 
-      - name: Build release binaries
-        run: cargo build --release --bin reconstructor --bin reconstructor-gui
+      - name: Install cargo-deb
+        if: matrix.bundle == 'debian'
+        run: cargo install cargo-deb
 
-      - name: Package tar.gz
+      - name: Build binaries
+        run: cargo build --release --target ${{ matrix.target }} --bin reconstructor --bin reconstructor-gui
+
+      # --- Debian Package ---
+      - name: Package (.deb)
+        if: matrix.bundle == 'debian'
         run: |
-          VERSION="${{ github.ref_name }}"
-          DIST="reconstructor-${VERSION}-linux-x86_64"
+          cargo deb --target ${{ matrix.target }} -p reconstructor-ui --no-build
+          mv target/${{ matrix.target }}/debian/*.deb ./reconstructor_${{ needs.release-please.outputs.tag_name }}_amd64.deb
+
+      # --- Arch / Generic Linux Package ---
+      - name: Package (.tar.zst)
+        if: matrix.bundle == 'arch'
+        run: |
+          DIST="reconstructor-${{ needs.release-please.outputs.tag_name }}-arch-x64"
           mkdir -p "$DIST"
-          cp target/release/reconstructor "$DIST/"
-          cp target/release/reconstructor-gui "$DIST/"
-          cp model_manifest.toml "$DIST/"
+          cp target/${{ matrix.target }}/release/reconstructor target/${{ matrix.target }}/release/reconstructor-gui model_manifest.toml "$DIST/"
           cp -r config "$DIST/"
-          tar czf "${DIST}.tar.gz" "$DIST/"
-          sha256sum "${DIST}.tar.gz" > SHA256SUMS.txt
-          echo "DIST_NAME=${DIST}" >> "$GITHUB_ENV"
+          tar -c --zstd -f "${DIST}.tar.zst" "$DIST/"
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x86_64
-          path: |
-            ${{ env.DIST_NAME }}.tar.gz
-            SHA256SUMS.txt
+      # --- Windows Package ---
+      - name: Package (Zip)
+        if: matrix.bundle == 'zip'
+        shell: bash
+        run: |
+          DIST="reconstructor-${{ needs.release-please.outputs.tag_name }}-win64"
+          mkdir -p "$DIST"
+          cp target/${{ matrix.target }}/release/reconstructor.exe target/${{ matrix.target }}/release/reconstructor-gui.exe model_manifest.toml "$DIST/"
+          cp -r config "$DIST/"
+          7z a "${DIST}.zip" "$DIST/"
 
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-22.04
-    needs: [build-linux]
+      # --- macOS Package ---
+      - name: Package (Tar)
+        if: matrix.bundle == 'tar'
+        run: |
+          DIST="reconstructor-${{ needs.release-please.outputs.tag_name }}-macos-arm64"
+          mkdir -p "$DIST"
+          cp target/${{ matrix.target }}/release/reconstructor target/${{ matrix.target }}/release/reconstructor-gui model_manifest.toml "$DIST/"
+          cp -r config "$DIST/"
+          tar -czf "${DIST}.tar.gz" "$DIST/"
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
-          generate_release_notes: true
-          files: |
-            *.tar.gz
-            SHA256SUMS.txt
+      - name: Upload binaries to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          gh release upload "$TAG" *.deb *.tar.zst *.zip *.tar.gz --clobber
